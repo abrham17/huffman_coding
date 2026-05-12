@@ -62,11 +62,6 @@ python file_operations.py decompress compressed.zip -o restored.txt
 python file_operations.py analyze document.txt
 ```
 
-#### Run performance tests
-```bash
-python file_operations.py test
-```
-
 #### Run performance evaluation directly
 ```bash
 python performance_evaluation.py
