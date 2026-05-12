@@ -1,7 +1,6 @@
 import os
 from typing import Tuple
 from huffman_coding import HuffmanCoding
-from performance_evaluation import PerformanceEvaluator
 import argparse
 
 class FileOperations:

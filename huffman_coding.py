@@ -3,7 +3,7 @@ import pickle
 import os
 from collections import Counter
 from typing import Dict, Tuple, Optional
-
+import struct
 
 class HuffmanNode:
     """Node class for Huffman Tree"""
@@ -113,51 +113,66 @@ class HuffmanCoding:
             return padded_text
         return padded_text[:-padding_amount]
     
+    
+
     def compress(self, text: str) -> bytes:
-        """Compress text and return bytes"""
+        """Compress text into raw binary format (NO PICKLE)"""
+
         self.build_huffman_tree(text)
         encoded_text = self.encode_text(text)
         padded_text, padding_amount = self.pad_encoded_text(encoded_text)
-        
-        # Convert to bytes
         b = bytearray()
         for i in range(0, len(padded_text), 8):
             byte = padded_text[i:i+8]
             b.append(int(byte, 2))
-        
-        # Prepare data for storage
-        data = {
-            'codes': self.codes,
-            'padding_amount': padding_amount,
-            'compressed_data': bytes(b),
-            'original_length': len(text)
-        }
-        
-        return pickle.dumps(data)
-    
+
+        compressed_bytes = bytes(b)
+        frequency = self.frequency_analysis(text)
+        header = bytearray()
+        header += struct.pack("H", len(frequency))
+
+        for char, freq in frequency.items():
+            header += struct.pack("cI", char.encode("utf-8"), freq)
+
+        header += struct.pack("B", padding_amount)
+
+        return bytes(header) + compressed_bytes
+
     def decompress(self, compressed_data: bytes) -> str:
-        """Decompress bytes back to original text"""
-        data = pickle.loads(compressed_data)
-        
-        self.codes = data['codes']
-        self.reverse_mapping = {v: k for k, v in self.codes.items()}
-        padding_amount = data['padding_amount']
-        compressed_bytes = data['compressed_data']
-        
-        # Convert bytes to bits
+        """Decompress raw binary format (NO PICKLE)"""
+
+        pointer = 0
+
+        (num_chars,) = struct.unpack_from("H", compressed_data, pointer)
+        pointer += 2
+
+        frequency = {}
+
+        for _ in range(num_chars):
+            char, freq = struct.unpack_from("cI", compressed_data, pointer)
+            pointer += struct.calcsize("cI")
+            frequency[char.decode("utf-8")] = freq
+
+        (padding_amount,) = struct.unpack_from("B", compressed_data, pointer)
+        pointer += 1
+
+        encoded_bytes = compressed_data[pointer:]
+
         bit_string = ""
-        for byte in compressed_bytes:
+        for byte in encoded_bytes:
             bit_string += format(byte, '08b')
-        
-        # Remove padding
+
         encoded_text = self.remove_padding(bit_string, padding_amount)
-        
-        # Decode
+
+        self.build_heap(frequency)
+        self.merge_nodes()
+        self.generate_codes()
+
         return self.decode_text(encoded_text)
-    
+
     def calculate_compression_ratio(self, original_text: str, compressed_data: bytes) -> float:
         """Calculate compression ratio"""
-        original_size = len(original_text) * 8  # 8 bits per character
+        original_size = len(original_text) * 8 
         compressed_size = len(compressed_data) * 8
         return original_size / compressed_size
     
