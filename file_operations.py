@@ -248,10 +248,6 @@ Examples:
     elif args.command == 'analyze':
         show_frequency_analysis(args.input)
     
-    elif args.command == 'test':
-        evaluator = PerformanceEvaluator()
-        evaluator.run_comprehensive_tests()
-    
     else:
         parser.print_help()
 
