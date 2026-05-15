@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 from typing import List, Dict
-from file_operations import FileOperations
+from file_operations import compress_file, decompress_file, verify_compression, read_text_file
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,9 +22,6 @@ REPORTS_DIR = os.path.join(BASE_DIR, "data", "reports")
 
 class PerformanceEvaluator:
     """Evaluate Huffman compression performance using real file operations"""
-
-    def __init__(self):
-        self.file_ops = FileOperations()
 
     # -----------------------------
     # CORE EVALUATION (FILE BASED)
@@ -45,29 +42,29 @@ class PerformanceEvaluator:
 
         # ---------------- Compression
         start_time = time.time()
-        compression_ratio, space_savings = self.file_ops.compress_file(
+        compression_ratio, space_savings = compress_file(
             input_path, compressed_path
         )
         compression_time = time.time() - start_time
 
         # ---------------- Decompression
         start_time = time.time()
-        self.file_ops.decompress_file(
+        decompress_file(
             compressed_path,
             decompressed_path
         )
         decompression_time = time.time() - start_time
 
         # ---------------- Verification
-        is_correct = self.file_ops.verify_compression(
+        is_correct = verify_compression(
             input_path,
             compressed_path,
             decompressed_path
         )
 
         # ---------------- File sizes (real disk size in bytes)
-        original_size = len(self.file_ops.read_text_file(input_path).encode('utf-8'))
-        compressed_size = self.file_ops.get_file_size(compressed_path)
+        original_size = len(read_text_file(input_path).encode('utf-8'))
+        compressed_size = os.path.getsize(compressed_path)
 
         result = {
             "description": description,
