@@ -5,3 +5,9 @@ __pycache__/
 *.egg-info/
 .venv/
 .env
+*.zip
+*_restored.txt
+huffman_results.json
+huffman_results.csv
+data/output/
+data/reports/

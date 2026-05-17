@@ -1,117 +1,81 @@
 # Huffman Coding Lossless Text Compression System
 
-A comprehensive implementation of Huffman Coding for lossless text compression, designed for digital platforms handling large volumes of textual data such as citizen records, reports, service logs, and legal documents.
+A comprehensive implementation of Huffman Coding for lossless text compression, designed for a national digital platform (e.g., e-government system) handling sensitive data such as citizen records, reports, service logs, and legal documents.
 
-## Features
+## 1. Scenario & Problem Statement
 
-- **Lossless Compression**: Guarantees perfect reconstruction of original data
-- **Frequency Analysis**: Analyzes character distribution patterns in text
-- **Huffman Tree Construction**: Builds optimal prefix codes based on character frequencies
-- **File I/O Operations**: Complete file compression and decompression capabilities
-- **Command-line Interface**: Easy-to-use CLI for all operations
-- **Verification System**: Ensures data integrity throughout compression/decompression
+As digital platforms scale, storage costs and data transmission overhead increase, especially in bandwidth-constrained environments. A lossless text compression mechanism is critical to:
+- Reduce storage space
+- Optimize data transmission
+- Preserve exact original content
 
-## Algorithm Overview
+Given the sensitivity of government records, lossy techniques are strictly unacceptable. This project uses Huffman Coding, an optimal prefix coding algorithm, to minimize the bits required to represent text without any information loss.
 
-Huffman Coding is a lossless data compression algorithm that assigns variable-length prefix codes to characters based on their frequency in the input text. More frequent characters receive shorter codes, while less frequent characters receive longer codes.
+## 2. System Implementation
 
-### Key Components
+The system implements the complete classical Huffman algorithm in Python:
 
-1. **Frequency Analysis**: Counts occurrences of each character
-2. **Priority Queue**: Builds min-heap for optimal tree construction
-3. **Huffman Tree**: Binary tree where left edges represent '0' and right edges represent '1'
-4. **Code Generation**: Traverses tree to generate prefix codes
-5. **Encoding/Decoding**: Converts text to bit sequences and back
+1. **Frequency Analysis**: Counts character occurrences in the dataset.
+2. **Tree Construction**: Uses a min-heap (priority queue) to construct an optimal binary tree.
+3. **Code Generation**: Traverses the tree to generate unique binary prefix codes for every character.
+4. **Encoding/Decoding**: Converts text to binary, and reconstructs the exact original text.
+5. **Serialization**: Packs the compression map into a binary header without using external libraries like `pickle`, ensuring authentic bit-level evaluation.
 
-## Installation & Usage
+### File Structure
+- `file_operations.py`: Handles transparent reading/writing of files and command-line execution.
+- `huffman_coding.py`: Core algorithm implementation (Node classes, heap building, encoding, decoding).
+- `performance_evaluation.py`: Testing suite to measure compression ratio, byte-level savings, and time complexity.
 
-### Prerequisites
+## 3. Performance Evaluation
 
-- Python 3.7 or higher
-- No external dependencies required (uses only Python standard library)
+The evaluation tests five distinct datasets matching real-world scenarios: natural language, a massive structured document, statistical logs, and randomized text. 
 
-### Files Structure
+### Empirical Results
 
-```
-huffman/
-├── file_operations.py         # Consolidated implementation: File I/O + CLI
-├── huffman_coding.py        # Huffman coding implementation
-├── performance_evaluation.py  # Performance testing and benchmarking
-├── test_file.txt           # test file for compression
-├── test_file_compressed.zip  # compressed test file
-├── test_file_restored.txt  # restored test file
-└── README.md               # This documentation
-```
+| Dataset | Type Description | Space Savings | Compression Ratio | Compression Time | Interpretation |
+|---|---|---|---|---|---|
+| **Alice29.txt** | Natural Language | **42.8%** | 1.75 | ~0.07s | Excellent compression. The uneven frequency distribution of natural English makes Huffman highly effective for standard reports. |
+| **Bible.txt** | Large Document | **45.2%** | 1.82 | ~15.1s | Sustains high compression across massive, realistic documents (~4MB) perfectly mimicking large legal or service log archives. |
+| **Repetitive_stats.txt**| Highly Skewed Stats| **87.0%** | 7.70 | ~0.24s | Incredible maximum efficiency. The extreme skew (e.g. representing zeroes tracking binary sensors) allows Huffman to group frequent signals into single bits. |
+| **Alphabet.txt** | Uniform Distribution| **40.2%** | 1.67 | ~0.03s | Fails to reach max potential compared to dictionary algorithms because characters are perfectly identical in frequency, preventing Huffman from exploiting variance. |
+| **Random.txt** | High Entropy (Worst) | **24.6%** | 1.33 | ~0.05s | Even with strictly randomized data without pattern, Huffman compresses efficiently, relying entirely on slight variations in bit sequencing. |
 
-### Command Line Usage
+*(Results automatically generated using `performance_evaluation.py` on a standard CPU node. All tests 100% verified lossless).*
 
-#### Compress a file
-```bash
-python file_operations.py compress document.txt
-python file_operations.py compress document.txt -o compressed.zip
-```
+A bar chart visualizing these file size differences is generated dynamically at `data/reports/performance_chart.png`.
 
-#### Decompress a file
-```bash
-python file_operations.py decompress compressed.zip
-python file_operations.py decompress compressed.zip -o restored.txt
-```
+## 4. Time Complexity Analysis
 
-#### Analyze character frequency
-```bash
-python file_operations.py analyze document.txt
-```
+- **Frequency Analysis**: O(N) where N is the length of the string.
+- **Tree Construction**: O(K log K) where K is the number of unique characters. In text files, K is typically small (e.g., K < 256), turning this into a near constant operation overhead.
+- **Encoding/Decoding**: O(N) as it iterates through the text sequence linearly.
 
-#### Run performance evaluation directly
-```bash
-python performance_evaluation.py
-```
+Overall Time Complexity: **O(N + K log K)**, making it highly efficient for massive log processing and real-time document delivery.
+Overall Space Complexity: **O(K)** auxiliary space to store the prefix codes and tree, well within acceptable bounds.
 
-## Performance Evaluation
+## 5. How to Run
 
-The implementation includes comprehensive performance evaluation with the following metrics:
+1. **Setup Environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/Scripts/activate  # On Windows Git Bash
+   pip install matplotlib numpy
+   ```
 
-- **Compression Ratio**: Original size / Compressed size
-- **Space Savings**: Percentage of storage space saved
-- **Time Complexity**: Compression and decompression speed
-- **Verification**: Data integrity checks
+2. **Run Benchmark Suite**:
+   ```bash
+   python performance_evaluation.py
+   ```
+   *This evaluates all datasets, generating summary reports and visual charts under `data/reports/`.*
 
-### Test Results Summary
-
-Based on comprehensive testing with different text types:
-
-| Text Type | Compression Ratio | Space Savings | Characteristics |
-|-----------|-------------------|---------------|-----------------|
-| Repetitive Text | 3.5-4.5 | 70-80% | High frequency skew |
-| Code-like Text | 2.5-3.5 | 60-70% | Repeated patterns |
-| Mixed Content | 1.8-2.5 | 45-60% | Moderate compression |
-| Random Text | 1.1-1.3 | 10-25% | Near-uniform distribution |
-
-## Algorithm Complexity
-
-- **Time Complexity**: O(n log n) where n is the number of unique characters
-- **Space Complexity**: O(n) for storing Huffman tree and codes
-- **Compression Speed**: Linear to input size after tree construction
-- **Decompression Speed**: Linear to compressed data size
-
-## Implementation Details
-
-### Core Classes
-
-- `HuffmanNode`: Represents nodes in the Huffman tree
-- `HuffmanCoding`: Main compression/decompression logic
-- `FileOperations`: File I/O and compression utilities
-
-### Data Storage
-
-Compressed files store:
-- Huffman codes dictionary
-- Padding information for bit alignment
-- Compressed bit sequence
-- Original text length for verification
-
-## Testing
-```bash
-python file_operations compress test_file.txt output.zip
-
-```
+3. **Manual CLI Usage**:
+   ```bash
+   # Compress a file
+   python file_operations.py compress data/input/alice29.txt -o data/output/example.zip
+   
+   # Decompress a file
+   python file_operations.py decompress data/output/example.zip -o data/output/restored.txt
+   
+   # View Character Frequencies
+   python file_operations.py analyze data/input/repetitive_stats.txt
+   ```

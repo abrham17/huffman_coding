@@ -67,7 +67,18 @@ class HuffmanCoding:
     
     def generate_codes(self):
         """Generate prefix codes for each character"""
+        # Reset codes and reverse_mapping for fresh generation
+        self.codes = {}
+        self.reverse_mapping = {}
+        
         root = self.heap[0]  # Get root without popping
+        
+        # Edge case: single unique character in text
+        if root.char is not None:
+            self.codes[root.char] = "0"
+            self.reverse_mapping["0"] = root.char
+            return
+        
         current_code = ""
         self.generate_codes_helper(root, current_code)
     
@@ -116,7 +127,7 @@ class HuffmanCoding:
     
 
     def compress(self, text: str) -> bytes:
-        """Compress text into raw binary format (NO PICKLE)"""
+        """Compress text to binary format"""
 
         self.build_huffman_tree(text)
         encoded_text = self.encode_text(text)
@@ -132,14 +143,17 @@ class HuffmanCoding:
         header += struct.pack("H", len(frequency))
 
         for char, freq in frequency.items():
-            header += struct.pack("cI", char.encode("utf-8"), freq)
+            char_bytes = char.encode("utf-8")
+            header += struct.pack("B", len(char_bytes))  # UTF-8 byte length
+            header += char_bytes  # UTF-8 bytes
+            header += struct.pack("I", freq)  # frequency
 
         header += struct.pack("B", padding_amount)
 
         return bytes(header) + compressed_bytes
 
     def decompress(self, compressed_data: bytes) -> str:
-        """Decompress raw binary format (NO PICKLE)"""
+        """Decompress binary data back to text"""
 
         pointer = 0
 
@@ -149,9 +163,14 @@ class HuffmanCoding:
         frequency = {}
 
         for _ in range(num_chars):
-            char, freq = struct.unpack_from("cI", compressed_data, pointer)
-            pointer += struct.calcsize("cI")
-            frequency[char.decode("utf-8")] = freq
+            (byte_len,) = struct.unpack_from("B", compressed_data, pointer)
+            pointer += 1
+            char_bytes = compressed_data[pointer:pointer+byte_len]
+            pointer += byte_len
+            char = char_bytes.decode("utf-8")
+            (freq,) = struct.unpack_from("I", compressed_data, pointer)
+            pointer += 4
+            frequency[char] = freq
 
         (padding_amount,) = struct.unpack_from("B", compressed_data, pointer)
         pointer += 1
@@ -171,13 +190,14 @@ class HuffmanCoding:
         return self.decode_text(encoded_text)
 
     def calculate_compression_ratio(self, original_text: str, compressed_data: bytes) -> float:
-        """Calculate compression ratio"""
-        original_size = len(original_text) * 8 
-        compressed_size = len(compressed_data) * 8
-        return original_size / compressed_size
+        """Calculate compression ratio based on actual UTF-8 byte sizes"""
+        original_size = len(original_text.encode('utf-8'))
+        compressed_size = len(compressed_data)
+        return original_size / compressed_size if compressed_size > 0 else 0
     
     def calculate_space_savings(self, original_text: str, compressed_data: bytes) -> float:
-        """Calculate space savings percentage"""
-        original_size = len(original_text) * 8
-        compressed_size = len(compressed_data) * 8
+        """Calculate space savings percentage based on actual UTF-8 byte sizes"""
+        original_size = len(original_text.encode('utf-8'))
+        compressed_size = len(compressed_data)
+        if original_size == 0: return 0
         return ((original_size - compressed_size) / original_size) * 100
